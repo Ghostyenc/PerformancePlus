@@ -6,21 +6,23 @@
 //                                   /____/             //
 //                                                     //
 ////////////////////////////////////////////////////////
-using Oxide.Core;
-using Oxide.Core.Libraries.Covalence;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using Newtonsoft.Json;
-using System;
 using System.Linq;
+using Newtonsoft.Json;
+using Oxide.Core;
+using Oxide.Core.Libraries.Covalence;
 using Oxide.Core.Plugins;
 using Oxide.Game.Rust.Cui;
+using UnityEngine;
 
 namespace Oxide.Plugins
 {
     [Info("Performance Plus", "Ghosty", "1.0.6")]
-    [Description("Conveyors and Auto Turrets turn off when their owner/team logs out if non vip, Sets some basic optimizations on startup, Has simple UI.")]
+    [Description(
+        "Conveyors and Auto Turrets turn off when their owner/team logs out if non vip, Sets some basic optimizations on startup, Has simple UI."
+    )]
     public class PerformancePlus : RustPlugin
     {
         #region Plugin Reference
@@ -44,8 +46,16 @@ namespace Oxide.Plugins
 
         void Loaded()
         {
-            ImageLibrary?.Call("AddImage", "https://rustlabs.com/img/items180/autoturret.png", "TurretImage");
-            ImageLibrary?.Call("AddImage", "https://rustlabs.com/img/items180/industrial.conveyor.png", "ConveyorImage");
+            ImageLibrary?.Call(
+                "AddImage",
+                "https://rustlabs.com/img/items180/autoturret.png",
+                "TurretImage"
+            );
+            ImageLibrary?.Call(
+                "AddImage",
+                "https://rustlabs.com/img/items180/industrial.conveyor.png",
+                "ConveyorImage"
+            );
         }
 
         #endregion Loading Images
@@ -87,46 +97,44 @@ namespace Oxide.Plugins
 
         #region Config
 
-public class Configuration
-{
-    [JsonProperty(PropertyName = "Turret Scan Frequency (Default > 1)")]
-    public float ScanFrequency { get; set; }
-
-    [JsonProperty(PropertyName = "Turn team members devices on when team member logs in")]
-    public bool TurnTeamMembersDevicesOn { get; set; } = true;
-    public static Configuration DefaultConfig()
-    {
-        return new Configuration
+        public class Configuration
         {
-            ScanFrequency = 5.0f,
-            TurnTeamMembersDevicesOn = true
-        };
-    }
-}
+            [JsonProperty(PropertyName = "Turret Scan Frequency (Default > 1)")]
+            public float ScanFrequency { get; set; }
 
-static Configuration config;
+            [JsonProperty(PropertyName = "Turn team members devices on when team member logs in")]
+            public bool TurnTeamMembersDevicesOn { get; set; } = true;
 
-protected override void LoadConfig()
-{
-    base.LoadConfig();
-    try
-    {
-        config = Config.ReadObject<Configuration>();
-        if (config == null) LoadDefaultConfig();
-        SaveConfig();
-    }
-    catch (Exception e)
-    {
-        Debug.LogException(e);
-        PrintWarning("Creating new config file.");
-        LoadDefaultConfig();
-        SaveConfig();
-    }
-}
+            public static Configuration DefaultConfig()
+            {
+                return new Configuration { ScanFrequency = 5.0f, TurnTeamMembersDevicesOn = true };
+            }
+        }
 
-protected override void LoadDefaultConfig() => config = Configuration.DefaultConfig();
+        static Configuration config;
 
-protected override void SaveConfig() => Config.WriteObject(config, true);
+        protected override void LoadConfig()
+        {
+            base.LoadConfig();
+            try
+            {
+                config = Config.ReadObject<Configuration>();
+                if (config == null)
+                    LoadDefaultConfig();
+                SaveConfig();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                PrintWarning("Creating new config file.");
+                LoadDefaultConfig();
+                SaveConfig();
+            }
+        }
+
+        protected override void LoadDefaultConfig() => config = Configuration.DefaultConfig();
+
+        protected override void SaveConfig() => Config.WriteObject(config, true);
 
         #endregion Config
 
@@ -188,13 +196,19 @@ protected override void SaveConfig() => Config.WriteObject(config, true);
             int processedDevices = 0;
             foreach (var conveyor in conveyorCache)
             {
-                ProcessDevice(conveyor.OwnerID, state => conveyor.SetSwitch(conveyor.IsPowered() && state));
+                ProcessDevice(
+                    conveyor.OwnerID,
+                    state => conveyor.SetSwitch(conveyor.IsPowered() && state)
+                );
                 processedDevices++;
                 yield return ProcessedDeviceRoutine(processedDevices, totalDevices);
             }
             foreach (var turret in autoTurretCache)
             {
-                ProcessDevice(turret.OwnerID, state => turret.SetIsOnline(turret.IsPowered() && state));
+                ProcessDevice(
+                    turret.OwnerID,
+                    state => turret.SetIsOnline(turret.IsPowered() && state)
+                );
                 processedDevices++;
                 yield return ProcessedDeviceRoutine(processedDevices, totalDevices);
             }
@@ -203,7 +217,10 @@ protected override void SaveConfig() => Config.WriteObject(config, true);
                 if (entity is AutoTurret)
                 {
                     var turret = entity as AutoTurret;
-                    if (turret.ShortPrefabName == "sentry.bandit.static" || turret.ShortPrefabName == "sentry.scientist.static")
+                    if (
+                        turret.ShortPrefabName == "sentry.bandit.static"
+                        || turret.ShortPrefabName == "sentry.scientist.static"
+                    )
                     {
                         turret.SetIsOnline(true);
                         processedDevices++;
@@ -229,10 +246,12 @@ protected override void SaveConfig() => Config.WriteObject(config, true);
         {
             float progress = (float)processedDevices / totalDevices * 100;
 
-            if ((progress >= 25 && lastReportedProgress < 25) ||
-                (progress >= 50 && lastReportedProgress < 50) ||
-                (progress >= 75 && lastReportedProgress < 75) ||
-                (progress >= 100 && lastReportedProgress < 100))
+            if (
+                (progress >= 25 && lastReportedProgress < 25)
+                || (progress >= 50 && lastReportedProgress < 50)
+                || (progress >= 75 && lastReportedProgress < 75)
+                || (progress >= 100 && lastReportedProgress < 100)
+            )
             {
                 Puts($"Processing devices: {progress:F2}% completed.");
                 lastReportedProgress = (int)(progress / 25) * 25;
@@ -241,39 +260,49 @@ protected override void SaveConfig() => Config.WriteObject(config, true);
             yield return null;
         }
 
-private IEnumerator ToggleDevicesForPlayer(string playerId, bool turnOn)
-{
-    bool isVip = permission.UserHasPermission(playerId, "performanceplus.vip");
-    var player = BasePlayer.FindByID(ulong.Parse(playerId));
-    if (player == null) yield break;
-    bool shouldToggle = true;
-    if (config.TurnTeamMembersDevicesOn)
-    {
-        var team = player.Team;
-        shouldToggle = turnOn || (team == null || team.members.All(memberId => !BasePlayer.activePlayerList.Any(p => p.userID == memberId && p.IsConnected)));
-    }
-    if (!isVip && shouldToggle)
-    {
-        foreach (var conveyor in conveyorCache)
+        private IEnumerator ToggleDevicesForPlayer(string playerId, bool turnOn)
         {
-            if (conveyor.OwnerID.ToString() == playerId && conveyor.IsPowered())
+            bool isVip = permission.UserHasPermission(playerId, "performanceplus.vip");
+            var player = BasePlayer.FindByID(ulong.Parse(playerId));
+            if (player == null)
+                yield break;
+            bool shouldToggle = true;
+            if (config.TurnTeamMembersDevicesOn)
             {
-                conveyor.SetSwitch(turnOn);
+                var team = player.Team;
+                shouldToggle =
+                    turnOn
+                    || (
+                        team == null
+                        || team.members.All(memberId =>
+                            !BasePlayer.activePlayerList.Any(p =>
+                                p.userID == memberId && p.IsConnected
+                            )
+                        )
+                    );
             }
-        }
-
-        foreach (var turret in autoTurretCache)
-        {
-            if (turret.OwnerID.ToString() == playerId && turret.IsPowered())
+            if (!isVip && shouldToggle)
             {
-                turret.SetIsOnline(turnOn);
-            }
-        }
-    }
+                foreach (var conveyor in conveyorCache)
+                {
+                    if (conveyor.OwnerID.ToString() == playerId && conveyor.IsPowered())
+                    {
+                        conveyor.SetSwitch(turnOn);
+                    }
+                }
 
-    playerDeviceStates[playerId] = turnOn;
-    yield return null;
-}
+                foreach (var turret in autoTurretCache)
+                {
+                    if (turret.OwnerID.ToString() == playerId && turret.IsPowered())
+                    {
+                        turret.SetIsOnline(turnOn);
+                    }
+                }
+            }
+
+            playerDeviceStates[playerId] = turnOn;
+            yield return null;
+        }
 
         #endregion Devices
 
@@ -283,74 +312,193 @@ private IEnumerator ToggleDevicesForPlayer(string playerId, bool turnOn)
         {
             var container = new CuiElementContainer();
 
-            container.Add(new CuiPanel
-            {
-                CursorEnabled = true,
-                Image = { Color = "0.1843137 0.1803922 0.145098 1", Material = "assets/content/ui/uibackgroundblur-ingamemenu.mat" },
-                RectTransform = { AnchorMin = "0.5 0.5", AnchorMax = "0.5 0.5", OffsetMin = "-108.425 -64.519", OffsetMax = "108.425 64.519" }
-            }, "Overlay", "Menu");
-
-            container.Add(new CuiPanel
-            {
-                CursorEnabled = false,
-                Image = { Color = "0.1372549 0.1333333 0.1098039 1" },
-                RectTransform = { AnchorMin = "0.5 0.5", AnchorMax = "0.5 0.5", OffsetMin = "-108.425 42.889", OffsetMax = "108.425 64.519" }
-            }, "Menu", "PanelBG");
-
-            container.Add(new CuiElement
-            {
-                Name = "Title",
-                Parent = "Menu",
-                Components =
+            container.Add(
+                new CuiPanel
                 {
-                    new CuiTextComponent { Text = "Performance Plus", Font = "robotocondensed-regular.ttf", FontSize = 14, Align = TextAnchor.UpperLeft, Color = "1 1 1 1" },
-                    new CuiOutlineComponent { Color = "0 0 0 0.5", Distance = "1 -1" },
-                    new CuiRectTransformComponent { AnchorMin = "0.5 0.5", AnchorMax = "0.5 0.5", OffsetMin = "-48.469 45.345", OffsetMax = "48.469 63.699" }
+                    CursorEnabled = true,
+                    Image =
+                    {
+                        Color = "0.1843137 0.1803922 0.145098 1",
+                        Material = "assets/content/ui/uibackgroundblur-ingamemenu.mat"
+                    },
+                    RectTransform =
+                    {
+                        AnchorMin = "0.5 0.5",
+                        AnchorMax = "0.5 0.5",
+                        OffsetMin = "-108.425 -64.519",
+                        OffsetMax = "108.425 64.519"
+                    }
+                },
+                "Overlay",
+                "Menu"
+            );
+
+            container.Add(
+                new CuiPanel
+                {
+                    CursorEnabled = false,
+                    Image = { Color = "0.1372549 0.1333333 0.1098039 1" },
+                    RectTransform =
+                    {
+                        AnchorMin = "0.5 0.5",
+                        AnchorMax = "0.5 0.5",
+                        OffsetMin = "-108.425 42.889",
+                        OffsetMax = "108.425 64.519"
+                    }
+                },
+                "Menu",
+                "PanelBG"
+            );
+
+            container.Add(
+                new CuiElement
+                {
+                    Name = "Title",
+                    Parent = "Menu",
+                    Components =
+                    {
+                        new CuiTextComponent
+                        {
+                            Text = "Performance Plus",
+                            Font = "robotocondensed-regular.ttf",
+                            FontSize = 14,
+                            Align = TextAnchor.UpperLeft,
+                            Color = "1 1 1 1"
+                        },
+                        new CuiOutlineComponent { Color = "0 0 0 0.5", Distance = "1 -1" },
+                        new CuiRectTransformComponent
+                        {
+                            AnchorMin = "0.5 0.5",
+                            AnchorMax = "0.5 0.5",
+                            OffsetMin = "-48.469 45.345",
+                            OffsetMax = "48.469 63.699"
+                        }
+                    }
                 }
-            });
+            );
 
-            container.Add(new CuiButton
-            {
-                Button = { Color = "0.1411765 0.1490196 0.1254902 1", Command = "toggleturrets" },
-                Text = { Text = "On/Off", Font = "robotocondensed-regular.ttf", FontSize = 9, Align = TextAnchor.MiddleCenter, Color = "0.6980392 0.6705883 0.627451 1" },
-                RectTransform = { AnchorMin = "0.5 0.5", AnchorMax = "0.5 0.5", OffsetMin = "-85.844 -47.471", OffsetMax = "-26.756 -33.129" }
-            }, "Menu", "TurretOnOffButton");
+            container.Add(
+                new CuiButton
+                {
+                    Button =
+                    {
+                        Color = "0.1411765 0.1490196 0.1254902 1",
+                        Command = "toggleturrets"
+                    },
+                    Text =
+                    {
+                        Text = "On/Off",
+                        Font = "robotocondensed-regular.ttf",
+                        FontSize = 9,
+                        Align = TextAnchor.MiddleCenter,
+                        Color = "0.6980392 0.6705883 0.627451 1"
+                    },
+                    RectTransform =
+                    {
+                        AnchorMin = "0.5 0.5",
+                        AnchorMax = "0.5 0.5",
+                        OffsetMin = "-85.844 -47.471",
+                        OffsetMax = "-26.756 -33.129"
+                    }
+                },
+                "Menu",
+                "TurretOnOffButton"
+            );
 
-            container.Add(new CuiElement
-            {
-                Name = "TurretImage",
-                Parent = "Menu",
-                Components = {
-                    new CuiRawImageComponent { Color = "1 1 1 1", Sprite = "assets/icons/autoturret (1).png", Png = ImageLibrary?.Call<string>("GetImage", "TurretImage") },
-                    new CuiOutlineComponent { Color = "0 0 0 0.5", Distance = "1 -1" },
-                    new CuiRectTransformComponent { AnchorMin = "0.5 0.5", AnchorMax = "0.5 0.5", OffsetMin = "-83.028 -30.585", OffsetMax = "-29.572 20.986" }
+            container.Add(
+                new CuiElement
+                {
+                    Name = "TurretImage",
+                    Parent = "Menu",
+                    Components =
+                    {
+                        new CuiRawImageComponent
+                        {
+                            Color = "1 1 1 1",
+                            Sprite = "assets/icons/autoturret (1).png",
+                            Png = ImageLibrary?.Call<string>("GetImage", "TurretImage")
+                        },
+                        new CuiOutlineComponent { Color = "0 0 0 0.5", Distance = "1 -1" },
+                        new CuiRectTransformComponent
+                        {
+                            AnchorMin = "0.5 0.5",
+                            AnchorMax = "0.5 0.5",
+                            OffsetMin = "-83.028 -30.585",
+                            OffsetMax = "-29.572 20.986"
+                        }
+                    }
                 }
-            });
+            );
 
-            container.Add(new CuiElement
-            {
-                Name = "ConveyorImage",
-                Parent = "Menu",
-                Components = {
-                    new CuiRawImageComponent { Color = "1 1 1 1", Sprite = "assets/icons/industrialconveyor.png", Png = ImageLibrary?.Call<string>("GetImage", "ConveyorImage") },
-                    new CuiOutlineComponent { Color = "0 0 0 0.5", Distance = "1 -1" },
-                    new CuiRectTransformComponent { AnchorMin = "0.5 0.5", AnchorMax = "0.5 0.5", OffsetMin = "33.811 -24.789", OffsetMax = "82.989 24.389" }
+            container.Add(
+                new CuiElement
+                {
+                    Name = "ConveyorImage",
+                    Parent = "Menu",
+                    Components =
+                    {
+                        new CuiRawImageComponent
+                        {
+                            Color = "1 1 1 1",
+                            Sprite = "assets/icons/industrialconveyor.png",
+                            Png = ImageLibrary?.Call<string>("GetImage", "ConveyorImage")
+                        },
+                        new CuiOutlineComponent { Color = "0 0 0 0.5", Distance = "1 -1" },
+                        new CuiRectTransformComponent
+                        {
+                            AnchorMin = "0.5 0.5",
+                            AnchorMax = "0.5 0.5",
+                            OffsetMin = "33.811 -24.789",
+                            OffsetMax = "82.989 24.389"
+                        }
+                    }
                 }
-            });
+            );
 
-            container.Add(new CuiButton
-            {
-                Button = { Color = "0.1411765 0.1490196 0.1254902 1", Command = "toggleconveyors" },
-                Text = { Text = "On/Off", Font = "robotocondensed-regular.ttf", FontSize = 9, Align = TextAnchor.MiddleCenter, Color = "0.6980392 0.6705883 0.627451 1" },
-                RectTransform = { AnchorMin = "0.5 0.5", AnchorMax = "0.5 0.5", OffsetMin = "29.256 -47.371", OffsetMax = "88.344 -33.029" }
-            }, "Menu", "ConveyorOnOffButton");
+            container.Add(
+                new CuiButton
+                {
+                    Button =
+                    {
+                        Color = "0.1411765 0.1490196 0.1254902 1",
+                        Command = "toggleconveyors"
+                    },
+                    Text =
+                    {
+                        Text = "On/Off",
+                        Font = "robotocondensed-regular.ttf",
+                        FontSize = 9,
+                        Align = TextAnchor.MiddleCenter,
+                        Color = "0.6980392 0.6705883 0.627451 1"
+                    },
+                    RectTransform =
+                    {
+                        AnchorMin = "0.5 0.5",
+                        AnchorMax = "0.5 0.5",
+                        OffsetMin = "29.256 -47.371",
+                        OffsetMax = "88.344 -33.029"
+                    }
+                },
+                "Menu",
+                "ConveyorOnOffButton"
+            );
 
-            container.Add(new CuiButton
-            {
-                Button = { Color = "0.6981132 0.03622286 0.03622286 1", Command = "closemenu" },
-                Text = { Text = "✘", FontSize = 13, Align = TextAnchor.MiddleCenter, Color = "1 1 1 1" },
-                RectTransform = { AnchorMin = "0.45 0.45", AnchorMax = "0.55 0.55" }
-            }, "Menu", "CloseButton");
+            container.Add(
+                new CuiButton
+                {
+                    Button = { Color = "0.6981132 0.03622286 0.03622286 1", Command = "closemenu" },
+                    Text =
+                    {
+                        Text = "✘",
+                        FontSize = 13,
+                        Align = TextAnchor.MiddleCenter,
+                        Color = "1 1 1 1"
+                    },
+                    RectTransform = { AnchorMin = "0.45 0.45", AnchorMax = "0.55 0.55" }
+                },
+                "Menu",
+                "CloseButton"
+            );
 
             CuiHelper.DestroyUi(player, "Menu");
             CuiHelper.AddUi(player, container);
@@ -370,7 +518,8 @@ private IEnumerator ToggleDevicesForPlayer(string playerId, bool turnOn)
         private void CloseMenu(ConsoleSystem.Arg arg)
         {
             var player = arg.Player();
-            if (player == null) return;
+            if (player == null)
+                return;
 
             CuiHelper.DestroyUi(player, "Menu");
         }
@@ -385,7 +534,9 @@ private IEnumerator ToggleDevicesForPlayer(string playerId, bool turnOn)
             }
             if (!permission.UserHasPermission(player.UserIDString, "performanceplus.toggleturrets"))
             {
-                player.ChatMessage("<color=red>Warning</color>: You do not have permission to use this command.");
+                player.ChatMessage(
+                    "<color=red>Warning</color>: You do not have permission to use this command."
+                );
                 return;
             }
             bool canToggle = false;
@@ -400,13 +551,21 @@ private IEnumerator ToggleDevicesForPlayer(string playerId, bool turnOn)
 
             if (!canToggle)
             {
-                player.ChatMessage("<color=red>Warning</color>: You cannot toggle your turrets as one or more of your turrets are not receiving power.");
+                player.ChatMessage(
+                    "<color=red>Warning</color>: You cannot toggle your turrets as one or more of your turrets are not receiving power."
+                );
                 return;
             }
 
-            bool newState = !playerDeviceStates.TryGetValue(player.UserIDString, out bool currentState) || !currentState;
-            ServerMgr.Instance.StartCoroutine(ToggleTurretsForPlayer(player.UserIDString, newState));
-            player.ChatMessage($"Turrets toggled {(newState ? "<color=green>(ON)</color>" : "<color=red>(OFF)</color>")}.");
+            bool newState =
+                !playerDeviceStates.TryGetValue(player.UserIDString, out bool currentState)
+                || !currentState;
+            ServerMgr.Instance.StartCoroutine(
+                ToggleTurretsForPlayer(player.UserIDString, newState)
+            );
+            player.ChatMessage(
+                $"Turrets toggled {(newState ? "<color=green>(ON)</color>" : "<color=red>(OFF)</color>")}."
+            );
         }
 
         [ConsoleCommand("toggleconveyors")]
@@ -418,9 +577,16 @@ private IEnumerator ToggleDevicesForPlayer(string playerId, bool turnOn)
                 return;
             }
 
-            if (!permission.UserHasPermission(player.UserIDString, "performanceplus.toggleconveyors"))
+            if (
+                !permission.UserHasPermission(
+                    player.UserIDString,
+                    "performanceplus.toggleconveyors"
+                )
+            )
             {
-                player.ChatMessage("<color=red>Warning</color>: You do not have permission to use this command.");
+                player.ChatMessage(
+                    "<color=red>Warning</color>: You do not have permission to use this command."
+                );
                 return;
             }
             bool canToggle = false;
@@ -435,13 +601,21 @@ private IEnumerator ToggleDevicesForPlayer(string playerId, bool turnOn)
 
             if (!canToggle)
             {
-                player.ChatMessage("<color=red>Warning</color>: You cannot toggle your conveyors as one or more of your conveyors are not receiving power.");
+                player.ChatMessage(
+                    "<color=red>Warning</color>: You cannot toggle your conveyors as one or more of your conveyors are not receiving power."
+                );
                 return;
             }
 
-            bool newState = !playerDeviceStates.TryGetValue(player.UserIDString, out bool currentState) || !currentState;
-            ServerMgr.Instance.StartCoroutine(ToggleConveyorsForPlayer(player.UserIDString, newState));
-            player.ChatMessage($"Conveyors toggled {(newState ? "<color=green>(ON)</color>" : "<color=red>(OFF)</color>")}.");
+            bool newState =
+                !playerDeviceStates.TryGetValue(player.UserIDString, out bool currentState)
+                || !currentState;
+            ServerMgr.Instance.StartCoroutine(
+                ToggleConveyorsForPlayer(player.UserIDString, newState)
+            );
+            player.ChatMessage(
+                $"Conveyors toggled {(newState ? "<color=green>(ON)</color>" : "<color=red>(OFF)</color>")}."
+            );
         }
 
         private IEnumerator ToggleTurretsForPlayer(string playerId, bool turnOn)
