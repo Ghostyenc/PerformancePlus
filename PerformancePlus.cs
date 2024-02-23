@@ -20,9 +20,7 @@ using UnityEngine;
 namespace Oxide.Plugins
 {
     [Info("Performance Plus", "Ghosty", "1.0.6")]
-    [Description(
-        "Conveyors and Auto Turrets turn off when their owner/team logs out if non vip, Sets some basic optimizations on startup, Has simple UI."
-    )]
+    [Description("Conveyors and Auto Turrets turn off when their owner/team logs out if non vip, Sets some basic optimizations on startup, Has simple UI.")]
     public class PerformancePlus : RustPlugin
     {
         #region Plugin Reference
