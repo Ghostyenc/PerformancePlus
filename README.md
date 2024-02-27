@@ -1,6 +1,6 @@
 About Performance Plus:
 
-Performance Plus is designed for PvE servers to help manage the large number of conveyors and turrets often placed, which can become a problem with and without entity limits, It even has some basic optimizations at startup (Credits to Farkas).
+Performance Plus is designed for PvE servers to help manage the large number of conveyors and turrets often placed, which can become a problem with and without entity limits, It even has some basic optimizations at startup.
 
 How it works:
 
